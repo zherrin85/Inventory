@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Inventory System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Header */
+        .header {
+            background: #1d1d1f;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.25rem;
+        }
+
+        /* Navigation */
+        .nav {
+            background: white;
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 1px solid #e5e5e7;
+            position: sticky;
+            top: 70px;
+            z-index: 999;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 0.75rem 0.5rem;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #666;
+        }
+
+        .nav-btn.active {
+            background: #007aff;
+            color: white;
+        }
+
+        .nav-btn:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 1rem;
+            min-height: calc(100vh - 140px);
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #007aff;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.secondary {
+            background: #34c759;
+        }
+
+        .action-btn.secondary:hover {
+            background: #28a745;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e5e7;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+
+        /* Scanner Interface */
+        .scanner-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Search Table */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e5e7;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background: #e3f2fd;
+        }
+
+        /* Inventory List */
+        .inventory-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .inventory-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-info h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .item-details {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .item-quantity {
+            background: #f0f9ff;
+            color: #0066cc;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Camera Scanner Styles */
+        #cameraContainer {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        #scanOverlay {
+            pointer-events: none;
+            animation: scanPulse 2s infinite;
+        }
+
+        @keyframes scanPulse {
+            0%, 100% { 
+                border-color: #00ff00; 
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            }
+            50% { 
+                border-color: #00aa00; 
+                box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+            }
+        }
+
+        .camera-error {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* HTTPS Warning */
+        .https-warning {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* Loading indicator */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .nav-btn {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.75rem;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-btn {
+                padding: 1.25rem;
+                font-size: 1rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Terminal Inventory System</h1>
+            <div class="user-info">User: <span id="currentUser">Admin</span> | Location: <span id="currentLocation">Main Terminal</span></div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav">
+            <button class="nav-btn active" onclick="showView('dashboard')">Dashboard</button>
+            <button class="nav-btn" onclick="showView('scan')">Scan</button>
+            <button class="nav-btn" onclick="showView('search')">Search</button>
+            <button class="nav-btn" onclick="showView('locations')">Locations</button>
+            <button class="nav-btn" onclick="showView('settings')">Settings</button>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Dashboard View -->
+            <div id="dashboard" class="view active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalItems">0</div>
+                        <div class="stat-label">Total Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="lowStockItems">0</div>
+                        <div class="stat-label">Low Stock</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalLocations">0</div>
+                        <div class="stat-label">Locations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="recentActivity">0</div>
+                        <div class="stat-label">Recent Activity</div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="showView('scan')">📱 Quick Scan</button>
+                    <button class="action-btn secondary" onclick="showView('search')">📋 View All Items</button>
+                </div>
+
+                <div class="inventory-list" id="dashboardInventory">
+                    <div class="loading">Loading inventory...</div>
+                </div>
+            </div>
+
+            <!-- Scan View -->
+            <div id="scan" class="view">
+                <div class="scanner-container">
+                    <h2 style="margin-bottom: 1rem;">Quick Scan</h2>
+                    
+                    <!-- Camera Scanner Section -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: #007aff;">📷 Camera Barcode Scanner</h3>
+                        <div id="cameraContainer" style="position: relative; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
+                            <video id="cameraPreview" style="width: 100%; max-width: 400px; height: 300px; object-fit: cover; display: none;"></video>
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+                            <div id="cameraPlaceholder" style="width: 100%; max-width: 400px; height: 300px; display: flex; align-items: center; justify-content: center; color: white; flex-direction: column;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
+                                <div>Camera scanner ready</div>
+                                <small>Click "Start Camera" to begin scanning</small>
+                            </div>
+                            <!-- Scanning overlay -->
+                            <div id="scanOverlay" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 100px; border: 2px solid #00ff00; border-radius: 8px;"></div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button class="action-btn" onclick="startCameraScanner()" id="startCameraBtn" style="background: #34c759; flex: 1; min-width: 200px;">
+                                📷 Start Camera Scanner
+                            </button>
+                            <button class="action-btn" onclick="stopCameraScanner()" id="stopCameraBtn" style="background: #ff3b30; flex: 1; min-width: 200px; display: none;">
+                                ⏹️ Stop Camera
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Entry Section -->
+                    <div style="border-top: 1px solid #e5e5e7; padding-top: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem; color: #666;">⌨️ Manual Entry</h3>
+                        <div class="form-group">
+                            <label style="font-size: 1.1rem; font-weight: 600;">Enter Barcode/SKU/Part Number</label>
+                            <input type="text" class="form-control" id="scannedCode" 
+                                   placeholder="Enter part number (e.g., CSC-2960X-48)" 
+                                   style="font-size: 1.1rem; padding: 1.2rem;"
+                                   onkeypress="handleEnterKey(event)">
+                            <small style="color: #666; margin-top: 0.5rem; display: block;">
+                                💡 Tip: Press Enter after typing to quick-add, or use buttons below
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <button class="action-btn" onclick="quickAdd()" style="background: #34c759;">➕ Add to Inventory</button>
+                        <button class="action-btn" onclick="quickRemove()" style="background: #ff3b30;">➖ Remove from Inventory</button>
+                    </div>
+
+                    <div id="scanStatus"></div>
+                </div>
+            </div>
+
+            <!-- Search View -->
+            <div id="search" class="view">
+                <div class="table-container">
+                    <h2 style="margin-bottom: 1rem;">Complete Inventory</h2>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search inventory..." onkeyup="searchInventory()">
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">Vendor ↕</th>
+                                    <th onclick="sortTable(1)">Product ↕</th>
+                                    <th onclick="sortTable(2)">Part Number ↕</th>
+                                    <th onclick="sortTable(3)">Quantity ↕</th>
+                                    <th onclick="sortTable(4)">Location ↕</th>
+                                    <th onclick="sortTable(5)">Last Inventoried ↕</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody">
+                                <tr><td colspan="6" class="loading">Loading inventory...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations View -->
+            <div id="locations" class="view">
+                <h2 style="margin-bottom: 1rem;">Location Management</h2>
+                
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="border-left: 3px solid #007aff; padding-left: 1rem; margin-bottom: 1rem;">
+                        <strong>Building A - Main Terminal</strong>
+                        <div style="margin-left: 1rem; margin-top: 0.5rem; color: #666;">
+                            <div>Floor 1 - Ground Level</div>
+                            <div>Floor 2 - Operations</div>
+                            <div>Floor 3 - Administration</div>
+                        </div>
+                    </div>
+                    <div style="border-left: 3px solid #34c759; padding-left: 1rem; margin-bottom: 1rem;">
+                        <strong>Building B - Storage Facility</strong>
+                        <div style="margin-left: 1rem; margin-top: 0.5rem; color: #666;">
+                            <div>Zone 1 - Network Equipment</div>
+                            <div>Zone 2 - Display Equipment</div>
+                            <div>Zone 3 - Hardware Storage</div>
+                        </div>
+                    </div>
+                    <div style="border-left: 3px solid #ff9500; padding-left: 1rem;">
+                        <strong>Building C - Warehouse</strong>
+                        <div style="margin-left: 1rem; margin-top: 0.5rem; color: #666;">
+                            <div>Rack 1-5 - RF Equipment</div>
+                            <div>Storage Area - Bulk Items</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings" class="view">
+                <h2 style="margin-bottom: 1rem;">Settings</h2>
+                
+                <!-- Import Section -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem; color: #007aff;">📥 Import Excel Inventory</h3>
+                    <p style="color: #666; margin-bottom: 1rem;">Upload your existing Excel inventory file to import all items at once.</p>
+                    
+                    <div class="form-group">
+                        <label>Select Excel File (.xlsx)</label>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls" class="form-control">
+                    </div>
+                    
+                    <button class="action-btn" onclick="importExcel()" style="background: #34c759;">
+                        📊 Import Inventory Data
+                    </button>
+                    
+                    <div id="importStatus" style="margin-top: 1rem;"></div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem;">System Information</h3>
+                    <p style="color: #666;">Connected to MariaDB database</p>
+                    <p style="color: #666;">Running on Node.js with nginx reverse proxy</p>
+                    <p style="color: #666;">Data persisted permanently in database</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+    <script>
+        let inventory = [];
+        let allInventory = [];
+        let cameraStream = null;
+        let codeReader = null;
+        let isScanning = false;
+
+        // Camera Scanner Functions
+        async function startCameraScanner() {
+            try {
+                // Check for HTTPS (required by most browsers)
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    throw new Error('Camera access requires HTTPS connection. Please use https:// or access via localhost.');
+                }
+
+                const video = document.getElementById('cameraPreview');
+                const placeholder = document.getElementById('cameraPlaceholder');
+                const overlay = document.getElementById('scanOverlay');
+                const startBtn = document.getElementById('startCameraBtn');
+                const stopBtn = document.getElementById('stopCameraBtn');
+
+                // Check if browser supports camera
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera not supported by this browser');
+                }
+
+                showScanStatus('📷 Requesting camera access...', 'info');
+
+                // Request camera access
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Use back camera on mobile
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+
+                // Setup video stream
+                video.srcObject = cameraStream;
+                video.play();
+
+                // Show video, hide placeholder
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                overlay.style.display = 'block';
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+
+                // Initialize barcode reader
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                isScanning = true;
+
+                showScanStatus('📷 Camera active! Point at a barcode to scan automatically...', 'success');
+
+                // Start continuous scanning
+                scanForBarcode();
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                let errorMsg = 'Failed to start camera: ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMsg += 'Please allow camera access in your browser settings and try again.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMsg += 'No camera found on this device.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMsg += 'Camera not supported by this browser.';
+                } else if (error.message.includes('HTTPS')) {
+                    errorMsg += error.message + ' You can still use manual entry below.';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                showScanStatus(`❌ ${errorMsg}`, 'error');
+            }
+        }
+
+        function stopCameraScanner() {
+            const video = document.getElementById('cameraPreview');
+            const placeholder = document.getElementById('cameraPlaceholder');
+            const overlay = document.getElementById('scanOverlay');
+            const startBtn = document.getElementById('startCameraBtn');
+            const stopBtn = document.getElementById('stopCameraBtn');
+
+            isScanning = false;
+
+            // Stop camera stream
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+
+            // Stop barcode reader
+            if (codeReader) {
+                codeReader.reset();
+                codeReader = null;
+            }
+
+            // Reset UI
+            video.style.display = 'none';
+            placeholder.style.display = 'flex';
+            overlay.style.display = 'none';
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+
+            showScanStatus('📷 Camera stopped.', 'info');
+        }
+
+        async function scanForBarcode() {
+            if (!isScanning || !codeReader) return;
+
+            try {
+                const video = document.getElementById('cameraPreview');
+                
+                // Capture frame and try to decode
+                const result = await codeReader.decodeOnceFromVideoDevice(undefined, video.id);
+                
+                if (result) {
+                    const barcode = result.getText();
+                    document.getElementById('scannedCode').value = barcode;
+                    
+                    // Visual feedback
+                    const overlay = document.getElementById('scanOverlay');
+                    overlay.style.borderColor = '#00ff00';
+                    overlay.style.boxShadow = '0 0 20px #00ff00';
+                    
+                    showScanStatus(`✅ Barcode detected: ${barcode}`, 'success');
+                    
+                    // Auto-stop camera after successful scan
+                    setTimeout(() => {
+                        stopCameraScanner();
+                    }, 2000);
+                    
+                    return;
+                }
+                
+            } catch (error) {
+                // Most "errors" are just "no barcode found", which is normal
+                if (error.name !== 'NotFoundException') {
+                    console.error('Scanning error:', error);
+                }
+            }
+
+            // Continue scanning
+            if (isScanning) {
+                setTimeout(scanForBarcode, 100); // Scan every 100ms
+            }
+        }
+
+        // Enhanced manual entry with scanner integration
+        function handleScannerInput(code) {
+            document.getElementById('scannedCode').value = code;
+            showScanStatus(`📱 Code entered: ${code}`, 'info');
+        }
+
+        // API calls
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`/api${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const stats = await apiCall('/dashboard');
+                document.getElementById('totalItems').textContent = stats.totalItems || 0;
+                document.getElementById('lowStockItems').textContent = stats.lowStock || 0;
+                document.getElementById('totalLocations').textContent = stats.totalLocations || 0;
+                document.getElementById('recentActivity').textContent = stats.recentActivity || 0;
+
+                // Load recent inventory items
+                const inventoryData = await apiCall('/inventory');
+                const dashboardList = document.getElementById('dashboardInventory');
+                
+                if (inventoryData.length === 0) {
+                    dashboardList.innerHTML = '<div class="loading">No inventory items found. Import your Excel file to get started.</div>';
+                } else {
+                    dashboardList.innerHTML = inventoryData.slice(0, 5).map(item => `
+                        <div class="inventory-item">
+                            <div class="item-info">
+                                <h3>${item.vendor} ${item.product}</h3>
+                                <div class="item-details">${item.vendor} • ${item.location} • ${item.part_number}</div>
+                            </div>
+                            <div class="item-quantity">${item.quantity}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+                document.getElementById('dashboardInventory').innerHTML = '<div class="alert alert-error">Failed to load dashboard data</div>';
+            }
+        }
+
+        // Load inventory table
+        async function loadInventoryTable() {
+            try {
+                const data = await apiCall('/inventory');
+                allInventory = data;
+                updateInventoryTable(data);
+            } catch (error) {
+                console.error('Failed to load inventory:', error);
+                document.getElementById('inventoryTableBody').innerHTML = '<tr><td colspan="6" class="alert alert-error">Failed to load inventory</td></tr>';
+            }
+        }
+
+        // Update inventory table
+        function updateInventoryTable(data) {
+            const tbody = document.getElementById('inventoryTableBody');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No inventory items found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.vendor}</td>
+                    <td>${item.product}</td>
+                    <td style="font-family: monospace; background: #f8f9fa;">${item.part_number}</td>
+                    <td style="text-align: center;">
+                        <span style="background: ${item.quantity <= 5 ? '#ff3b30' : '#34c759'}; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                            ${item.quantity}
+                        </span>
+                    </td>
+                    <td>${item.location}</td>
+                    <td>${item.last_inventoried || 'Never'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Navigation
+        function showView(viewName) {
+            // Stop camera when leaving scan view
+            if (isScanning && viewName !== 'scan') {
+                stopCameraScanner();
+            }
+
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(viewName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for specific views
+            if (viewName === 'dashboard') {
+                loadDashboard();
+            } else if (viewName === 'search') {
+                loadInventoryTable();
+            }
+        }
+
+        // Quick Actions
+        function handleEnterKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                quickAdd();
+            }
+        }
+
+        async function quickAdd() {
+            const partNumber = document.getElementById('scannedCode').value.trim();
+            if (!partNumber) {
+                showScanStatus('Please enter a part number first.', 'error');
+                return;
+            }
+            
+            const quantity = prompt('How many items to add?', '1');
+            if (!quantity || isNaN(quantity) || quantity <= 0) {
+                return;
+            }
+            
+            try {
+                const result = await apiCall('/inventory/update-quantity', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        partNumber: partNumber,
+                        quantityChange: parseInt(quantity),
+                        action: 'add'
+                    })
+                });
+                
+                showScanStatus(`✅ Added ${quantity} items. New total: ${result.newQuantity}`, 'success');
+                document.getElementById('scannedCode').value = '';
+                loadDashboard(); // Refresh dashboard
+                
+            } catch (error) {
+                showScanStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function quickRemove() {
+            const partNumber = document.getElementById('scannedCode').value.trim();
+            if (!partNumber) {
+                showScanStatus('Please enter a part number first.', 'error');
+                return;
+            }
+            
+            const quantity = prompt('How many items to remove?', '1');
+            if (!quantity || isNaN(quantity) || quantity <= 0) {
+                return;
+            }
+            
+            try {
+                const result = await apiCall('/inventory/update-quantity', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        partNumber: partNumber,
+                        quantityChange: parseInt(quantity),
+                        action: 'remove'
+                    })
+                });
+                
+                showScanStatus(`✅ Removed ${quantity} items. Remaining: ${result.newQuantity}`, 'success');
+                document.getElementById('scannedCode').value = '';
+                loadDashboard(); // Refresh dashboard
+                
+            } catch (error) {
+                showScanStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showScanStatus(message, type) {
+            const statusDiv = document.getElementById('scanStatus');
+            let alertClass = 'alert-success';
+            
+            if (type === 'error') alertClass = 'alert-error';
+            else if (type === 'warning') alertClass = 'alert-warning';
+            else if (type === 'info') alertClass = 'alert-warning'; // Use warning style for info
+            
+            statusDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Search
+        let searchTimeout;
+        async function searchInventory() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('searchInput').value.trim();
+                
+                if (!query) {
+                    updateInventoryTable(allInventory);
+                    return;
+                }
+                
+                try {
+                    const results = await apiCall(`/inventory/search?q=${encodeURIComponent(query)}`);
+                    updateInventoryTable(results);
+                } catch (error) {
+                    console.error('Search failed:', error);
+                }
+            }, 300);
+        }
+
+        // Table sorting
+        function sortTable(columnIndex) {
+            const table = document.getElementById('inventoryTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+            
+            if (rows.length <= 1) return; // No data to sort
+            
+            rows.sort((a, b) => {
+                const aText = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+                const bText = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+                
+                if (columnIndex === 3) { // Quantity column
+                    return parseInt(aText) - parseInt(bText);
+                } else if (columnIndex === 5) { // Last Inventoried
+                    const aDate = new Date(aText === 'Never' ? '1900-01-01' : aText);
+                    const bDate = new Date(bText === 'Never' ? '1900-01-01' : bText);
+                    return aDate - bDate;
+                }
+                
+                return aText.localeCompare(bText);
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Excel Import
+        async function importExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showImportStatus('Please select a file first.', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showImportStatus('Importing data...', 'info');
+                
+                const response = await fetch('/api/inventory/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showImportStatus(`✅ Successfully imported ${result.imported} items!`, 'success');
+                    fileInput.value = '';
+                    loadDashboard();
+                    loadInventoryTable();
+                } else {
+                    showImportStatus(`❌ Import failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                showImportStatus(`❌ Import failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showImportStatus(message, type) {
+            const statusDiv = document.getElementById('importStatus');
+            const alertClass = type === 'info' ? 'alert-warning' : `alert-${type}`;
+            statusDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            
+            if (type !== 'info') {
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 10000);
+            }
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+        });
+
+        // Cleanup camera when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (isScanning) {
+                stopCameraScanner();
+            }
+        });
+
+        // Also cleanup when page visibility changes (mobile apps)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && isScanning) {
+                stopCameraScanner();
+            }
+        });
+    </script>
+</body>
+</html>
